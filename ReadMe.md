@@ -81,8 +81,8 @@ print(mc.pos("들어간다"))
 [('들어간다', 'VV+EC')]
 ```
 
-This causes inconsistent tokenization, and makes weird POS tag like VV+EC which users would not want.
-The fixed code in this repository solve this problem. It force MeCab-ko to morpheme-tokenize all eojeol strings consistently.
+This causes inconsistent tokenization, and makes weird POS tags like VV+EC which users would not want.
+The fixed code in this repository would solve this problem. It forces MeCab-ko to morpheme-tokenize all eojeol strings consistently.
 
 <br>
 
