@@ -36,8 +36,64 @@ print(mc.pos("들어간다"))
 [('들어가', 'VV'), ('ㄴ다', 'EC')]
 ```
 
+<br>
 
-## Description
+## Description (English)
+MeCab-Ko is the fastest of all the morphological analyzer in KoNLPy. [[reference]](https://konlpy.org/en/latest/morph/#id1 "KoNLPy: Morphological analysis and POS tagging") However, its morpheme tokenization doesn't work under a certain condition.
+
+```python
+from konlpy.tag import Mecab
+mc = Mecab()
+print(mc.pos("들어간다"))
+```
+```python
+[('들어간다', 'VV+EC')]
+```
+
+The string above is not morpheme-tokenized properly. What we expect is
+
+```python
+[('들어가', 'VV'), ('ㄴ다', 'EC')]
+```
+
+It seems that **if the sum of morpheme-tokenized strings in an eojeol string is not equal to the original string,** MeCab-Ko does not tokenize the eojeol string.
+To put it another way, 
+
+### 1) sum of morpheme-tokenized strings == original string<br>
+(ex: '들어가' + '다' == '들어가다')
+```python
+from konlpy.tag import Mecab
+mc = Mecab()
+print(mc.pos("들어가다"))
+```
+```python
+[('들어가', 'VV'), ('다', 'EC')]
+```
+
+### 2) sum of morpheme-tokenized strings != original string<br>
+(예: '들어가' + 'ㄴ다' != '들어가다')
+```python
+from konlpy.tag import Mecab
+mc = Mecab()
+print(mc.pos("들어간다"))
+```
+```python
+[('들어간다', 'VV+EC')]
+```
+
+This causes inconsistent tokenization, and makes weird POS tag like VV+EC which users would not want.
+The fixed code in this repository solve this problem. It force MeCab-ko to morpheme-tokenize all eojeol strings consistently.
+
+<br>
+
+Additionaly, there are some other changes.
+- Ideographic spaces (\u3000) which cannot be distinguished from eojeol separators (spaces) with the naked eye are replaced with spaces (" ").
+- coda character *ᆫ* and *ᆯ* are replaced with *ㄴ* and *ㄹ* which can be typed easily on a keyboard.
+- A 2 eojeol string '영치기 영차' which is morpheme-tokenized one morpheme (영치기 영차/IC) uncorrectly incorrectly. It is forced to morpheme-tokenized as two morpheme temporarily.
+
+<br>
+
+## Description (한국어)
 MeCab-ko는 KoNLPy에서 활용할 수 있는 형태소 분석기 중 분석 시간의 측면에서 가장 뛰어난 성능을 보이는 형태소 분석기이다. [[reference]](https://konlpy.org/en/latest/morph/#id1 "KoNLPy: Morphological analysis and POS tagging") 다만 특정 조건하에서 형태소 토큰화가 일반적인 방식으로 이루어지지 않는 경우가 있다.
 
 ```python
