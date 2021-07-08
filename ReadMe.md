@@ -60,7 +60,7 @@ It seems that **if the sum of morpheme-tokenized strings in an eojeol string is 
 To put it another way, 
 
 ### 1) sum of morpheme-tokenized strings == original string<br>
-(ex: '들어가' + '다' == '들어가다')
+(ex. '들어가' + '다' == '들어가다')
 ```python
 from konlpy.tag import Mecab
 mc = Mecab()
@@ -71,7 +71,7 @@ print(mc.pos("들어가다"))
 ```
 
 ### 2) sum of morpheme-tokenized strings != original string<br>
-(예: '들어가' + 'ㄴ다' != '들어간다')
+(ex. '들어가' + 'ㄴ다' != '들어간다')
 ```python
 from konlpy.tag import Mecab
 mc = Mecab()
