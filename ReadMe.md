@@ -89,7 +89,7 @@ The fixed code in this repository would solve this problem. It forces MeCab-ko t
 Additionaly, there are some other changes.
 - Ideographic spaces (\u3000) which cannot be distinguished from eojeol separators (spaces) with the naked eye are replaced with spaces (" ").
 - coda character *ᆫ* and *ᆯ* are replaced with *ㄴ* and *ㄹ* which can be typed easily on a keyboard.
-- A 2 eojeol string '영치기 영차' which is morpheme-tokenized one morpheme (영치기 영차/IC) uncorrectly incorrectly. It is forced to morpheme-tokenized as two morpheme temporarily.
+- A 2 eojeol string '영치기 영차' which is morpheme-tokenized one morpheme (영치기 영차/IC) incorrectly. It is forced to morpheme-tokenized as two morpheme temporarily.
 
 <br>
 
