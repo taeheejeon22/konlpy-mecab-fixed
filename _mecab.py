@@ -218,7 +218,6 @@ class Mecab():
         # self = Mecab()
         if sys.version_info[0] >= 3: # for Python 3
             result = self.tagger.parse(phrase)  # an analysed result of a phrase (or a sentence) (e.g. 이게 뭔지 알아. > 이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*\n뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*\n알\tVV,*,T,알,*,*,*,*\n아\tEF,*,F,아,*,*,*,*\n.\tSF,*,*,*,*,*,*,*\nEOS\n)
-            result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ") # converting final consonant characters to ordinary single characters
 
             if flatten: # flatten = True. If you want to get a 1-D (morpheme/POS) result
                             # e.g.
@@ -230,6 +229,7 @@ class Mecab():
                             # ('알', 'VV'),
                             # ('아', 'EF'),
                             # ('.', 'SF')])
+                result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ") # converting final consonant characters to ordinary single characters
                 return parse(result, join=join)
             else:   # flatten = False. If you want to get a 2-D (eojeol, morpheme/POS) result
                         # e.g.
@@ -285,7 +285,6 @@ class Mecab():
                         for j in range(len(result_mor_lst[i])):
                             result_mor_lst_1.append(result_mor_lst[i][j])
 
-
                 """
                 e.g.
                 ['이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',                    ['이것\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',
@@ -312,6 +311,7 @@ class Mecab():
                             break
                     pos_result.append(ej_mor)   # adding the 1-D (morpheme/POS) list to the final 2-D (eojeol, morpheme/POS) list
 
+                pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ"), mor_pos[1])   for mor_pos in word] for word in pos_result]   # converting final consonant characters to ordinary single characters
                 return pos_result
                 
                 """
