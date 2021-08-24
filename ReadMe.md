@@ -88,7 +88,7 @@ The fixed code in this repository would solve this problem. It forces MeCab-ko t
 
 Additionaly, there are some other changes.
 - Ideographic spaces (\u3000) which cannot be distinguished from eojeol separators (spaces) with the naked eye are replaced with spaces (" ").
-- coda character *ᆫ* and *ᆯ* are replaced with *ㄴ* and *ㄹ* which can be typed easily on a keyboard.
+- Consonant characters *ᆫ*, *ᆯ*, and *ᄇ* are replaced with *ㄴ*, *ㄹ*, and *ㅂ* which can be typed easily on a keyboard.
 - A 2 eojeol string '영치기 영차' which is incorrectly morpheme-tokenized as one morpheme (영치기 영차/IC) is forced to morpheme-tokenized as two morphemes temporarily.
 
 <br>
@@ -143,7 +143,7 @@ print(mc.pos("들어간다"))
 
 추가적으로 다음과 같은 변경 사항이 존재한다.
 - 어절 구분자인 space와 육안으로 구분되지 않는 ideographic space **\u3000**을 space로 변환하여 처리하도록 함.
-- 종성 문자 *ᆫ*과 *ᆯ*을, 키보드에서 바로 입력할 수 있는, 일반 낱글자 *ㄴ*과 *ㄹ*로 변환하여 처리하도록 함.
+- 자음 문자 *ᆫ*, *ᆯ*, *ᄇ을*, 키보드에서 바로 입력할 수 있는, 일반 낱글자 *ㄴ*, *ㄹ*, *ㅂ* 로 변환하여 처리하도록 함.
 - '영치기 영차'라는 2어절 문자열을 공백을 포함한 하나의 형태소 토큰(영치기 영차/IC)으로 분석하는 문제가 있어, 이를 2개의 형태소 토큰으로 나누어 분석하도록 임시 조치함.
 
 
