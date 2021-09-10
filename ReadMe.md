@@ -146,6 +146,7 @@ print(mc.pos("들어간다"))
 - 자음 문자 *ᆫ*, *ᆯ*, *ᄇ을*, 키보드에서 바로 입력할 수 있는, 일반 낱글자 *ㄴ*, *ㄹ*, *ㅂ* 로 변환하여 처리하도록 함.
 - '영치기 영차'라는 2어절 문자열을 공백을 포함한 하나의 형태소 토큰(영치기 영차/IC)으로 분석하는 문제가 있어, 이를 2개의 형태소 토큰으로 나누어 분석하도록 임시 조치함.
 
+<br>
 
 ## KoNLPy GitHub
 https://github.com/konlpy/konlpy
@@ -154,7 +155,7 @@ https://github.com/konlpy/konlpy
 
 ## Update log
 - 2021-09-10
-    - We added an instance variable 'use_original' so that you don't have to replace the "_mecab.py" file itself to use the original or the fixed version.
+    - We added an instance variable 'use_original' so that you don't have to replace the '_mecab.py' file itself to use the original or the fixed version.
     - The default value is False, which means we use the fixed version. If you want to use the original version, set the variable as True.
 
     1) The original version
