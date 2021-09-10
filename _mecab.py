@@ -31,16 +31,16 @@ regexp = re.compile(".+(?=/[^A-Z])") # a pattern for only morphemes and their PO
 
 
 ######################## the original code ##############################
-# def parse(result, allattrs=False, join=False):
-#     def split(elem, join=False):
-#         if not elem: return ('', 'SY')
-#         s, t = elem.split('\t')
-#         if join:
-#             return s + '/' + t.split(',', 1)[0]
-#         else:
-#             return (s, t.split(',', 1)[0])
+def parse(result, allattrs=False, join=False):
+    def split(elem, join=False):
+        if not elem: return ('', 'SY')
+        s, t = elem.split('\t')
+        if join:
+            return s + '/' + t.split(',', 1)[0]
+        else:
+            return (s, t.split(',', 1)[0])
 
-#     return [split(elem, join=join) for elem in result.splitlines()[:-1]]
+    return [split(elem, join=join) for elem in result.splitlines()[:-1]]
 #########################################################################
 
 
@@ -58,7 +58,7 @@ e.g. 이게 뭔지 알아.
 ('.', 'SF')])
 """
 
-def parse(result, allattrs=False, join=False):
+def parse_fixed(result, allattrs=False, join=False):
         # result: an analysed result of a sentence (e.g. 이게 뭔지 알아. > 이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*\n뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*\n알\tVV,*,T,알,*,*,*,*\n아\tEF,*,F,아,*,*,*,*\n.\tSF,*,*,*,*,*,*,*\nEOS\n)
              
     def split(elem, join=False):
@@ -204,132 +204,158 @@ class Mecab():
     .. _Eunjeon Project: http://eunjeon.blogspot.kr/
     """
 
+
     # TODO: check whether flattened results equal non-flattened
     def pos(self, phrase, flatten=True, join=False):
-        """POS tagger.
+        if self.use_original == False:  # If we use the fixed version
+            """POS tagger.
 
-        :param flatten: If False, preserves eojeols.
-        :param join: If True, returns joined sets of morph and tag.
-        """
+            :param flatten: If False, preserves eojeols.
+            :param join: If True, returns joined sets of morph and tag.
+            """
 
-        phrase = phrase.replace('\u3000', ' ')  # replacing ideographic spaces into blanks
-        phrase = phrase.replace('영치기 영차', '영치기영차')   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
-                
-        # self = Mecab()
-        if sys.version_info[0] >= 3: # for Python 3
-            result = self.tagger.parse(phrase)  # an analysed result of a phrase (or a sentence) (e.g. 이게 뭔지 알아. > 이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*\n뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*\n알\tVV,*,T,알,*,*,*,*\n아\tEF,*,F,아,*,*,*,*\n.\tSF,*,*,*,*,*,*,*\nEOS\n)
-
-            if flatten: # flatten = True. If you want to get a 1-D (morpheme/POS) result
-                            # e.g.
-                            # [('이것', 'NP'),
-                            # ('이', 'JKS'),
-                            # ('뭐', 'NP'),
-                            # ('이', 'VCP'),
-                            # ('ㄴ지', 'EC'),
-                            # ('알', 'VV'),
-                            # ('아', 'EF'),
-                            # ('.', 'SF')])
-                result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ") # converting final consonant characters to ordinary single characters
-                return parse(result, join=join)
-            else:   # flatten = False. If you want to get a 2-D (eojeol, morpheme/POS) result
-                        # e.g.
-                        # [[('이것', 'NP'), ('이', 'JKS')],
-                        # [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
-                        # [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
-
-                ## 1) an analysed result of Mecab-ko
-                    # e.g.
-                    # ['이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*',
-                    # '뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*',
-                    # '알\tVV,*,T,알,*,*,*,*',
-                    # '아\tEF,*,F,아,*,*,*,*',
-                    # '.\tSF,*,*,*,*,*,*,*']
-                result_mor_lst = result.splitlines()[:-1]
-                result_mor_lst = [x.replace('영치기 영차', '영치기영차') for x in result_mor_lst]   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
-
-
-                ## 2) adding indices of eojeols to result_mor_lst
-                phrase2ej = phrase.split()  # 어절 리스트 # ['먹을', '수', '있다']        
-                cnt = 0 # index of an eojeol
-                concat_mor = ''               
-                
-                for i in range(len(result_mor_lst)):
-                    info_str = result_mor_lst[i].split("\t")[0]
-                    info_str = info_str.strip()
+            phrase = phrase.replace('\u3000', ' ')  # replacing ideographic spaces into blanks
+            phrase = phrase.replace('영치기 영차', '영치기영차')   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
                     
-                    concat_mor += info_str  # concatenating morphemes until the string is equal to their original eojeol (e.g. 알 > 알았 > 알았어요)
+            # self = Mecab()
+            if sys.version_info[0] >= 3: # for Python 3
+                result = self.tagger.parse(phrase)  # an analysed result of a phrase (or a sentence) (e.g. 이게 뭔지 알아. > 이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*\n뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*\n알\tVV,*,T,알,*,*,*,*\n아\tEF,*,F,아,*,*,*,*\n.\tSF,*,*,*,*,*,*,*\nEOS\n)
 
-                    if concat_mor == phrase2ej[cnt]:    # If the string of concatenated morphemes is equal to their original eojeol
-                        result_mor_lst[i] += "," + str(cnt) # adding the index (cnt) of the eojeol
-                        cnt += 1
-                        concat_mor = ''
-                    else:
-                        result_mor_lst[i] += "," + str(cnt) # adding the index (cnt) of the eojeol
+                if flatten: # flatten = True. If you want to get a 1-D (morpheme/POS) result
+                                # e.g.
+                                # [('이것', 'NP'),
+                                # ('이', 'JKS'),
+                                # ('뭐', 'NP'),
+                                # ('이', 'VCP'),
+                                # ('ㄴ지', 'EC'),
+                                # ('알', 'VV'),
+                                # ('아', 'EF'),
+                                # ('.', 'SF')])
+                    result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ") # converting final consonant characters to ordinary single characters
+                    return parse_fixed(result, join=join)
+                else:   # flatten = False. If you want to get a 2-D (eojeol, morpheme/POS) result
+                            # e.g.
+                            # [[('이것', 'NP'), ('이', 'JKS')],
+                            # [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
+                            # [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
+
+                    ## 1) an analysed result of Mecab-ko
+                        # e.g.
+                        # ['이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*',
+                        # '뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*',
+                        # '알\tVV,*,T,알,*,*,*,*',
+                        # '아\tEF,*,F,아,*,*,*,*',
+                        # '.\tSF,*,*,*,*,*,*,*']
+                    result_mor_lst = result.splitlines()[:-1]
+                    result_mor_lst = [x.replace('영치기 영차', '영치기영차') for x in result_mor_lst]   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
 
 
-                ## 3) splitting the result_mor_lst by morpheme for the case when the string of concatenated morphmese is not equal to their original eojeol (e.g. 뭔지 != 뭐 + 이 + ㄴ지)
-                for i in range(len(result_mor_lst)):
-                    splited = result_mor_lst[i].split(",")
-                    if splited[4] == 'Inflect': # If an eojeol is Inflect (= a concatenation of morphemes is not equal to its original eojeol. (e.g. 뭔지 != 뭐 + 이 + ㄴ지)
-                        mors = [x.split('/')[0] for x in splited[7].split('+')]                        
-                        for_replace = []
-                        for j in range(len(mors)):
-                            for_replace += [ mors[j] + '\t' + result_mor_lst[i].split('\t')[-1]]
-                        result_mor_lst[i] = for_replace
-                                    
-                result_mor_lst_1 = []   # 형태소 단위로 쪼개 놓은 것 저장할 list
-                for i in range(len(result_mor_lst)):
-                    if not type(result_mor_lst[i]) == list:
-                        result_mor_lst_1.append(result_mor_lst[i])
-                    else:
-                        for j in range(len(result_mor_lst[i])):
-                            result_mor_lst_1.append(result_mor_lst[i][j])
+                    ## 2) adding indices of eojeols to result_mor_lst
+                    phrase2ej = phrase.split()  # 어절 리스트 # ['먹을', '수', '있다']        
+                    cnt = 0 # index of an eojeol
+                    concat_mor = ''               
+                    
+                    for i in range(len(result_mor_lst)):
+                        info_str = result_mor_lst[i].split("\t")[0]
+                        info_str = info_str.strip()
+                        
+                        concat_mor += info_str  # concatenating morphemes until the string is equal to their original eojeol (e.g. 알 > 알았 > 알았어요)
 
-                """
-                e.g.
-                ['이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',                    ['이것\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',
-                                                                                            '이\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',
-                '뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',            '뭐\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',
-                                                                                        >     '이\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',
-                                                                                            'ㄴ지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',
-                '알\tVV,*,T,알,*,*,*,*,2',                                                     '알\tVV,*,T,알,*,*,*,*,2',
-                '아\tEF,*,F,아,*,*,*,*,2',                                                     '아\tEF,*,F,아,*,*,*,*,2',
-                '.\tSF,*,*,*,*,*,*,*,2']                                                      '.\tSF,*,*,*,*,*,*,*,2']
-                """
+                        if concat_mor == phrase2ej[cnt]:    # If the string of concatenated morphemes is equal to their original eojeol
+                            result_mor_lst[i] += "," + str(cnt) # adding the index (cnt) of the eojeol
+                            cnt += 1
+                            concat_mor = ''
+                        else:
+                            result_mor_lst[i] += "," + str(cnt) # adding the index (cnt) of the eojeol
 
-                ## 4) saving the 2-D (eojeol, morpheme/POS) result 
-                parsed_mor = parse(self.tagger.parse(phrase), join=join)    # the 1-D (morpheme/POS) result
 
-                pos_result = [] # a 2-D list for the final result
-                cnt = 0 # index for a morpheme
-                for i in range(len(phrase2ej)):
-                    ej_mor = [] # a 1-D (morpheme/POS) list of an eojeol
-                    while i == int( result_mor_lst_1[cnt].split(",")[-1]):  # While the index of a morpheme is equal to the index of an eojeol
-                        ej_mor.append(parsed_mor[cnt])  # adding a morpheme/POS to ej_mor
-                        cnt += 1
-                        if cnt == len(result_mor_lst_1): # If cnt is equal to the lengh of a phrase (or sentence)
-                            break
-                    pos_result.append(ej_mor)   # adding the 1-D (morpheme/POS) list to the final 2-D (eojeol, morpheme/POS) list
+                    ## 3) splitting the result_mor_lst by morpheme for the case when the string of concatenated morphmese is not equal to their original eojeol (e.g. 뭔지 != 뭐 + 이 + ㄴ지)
+                    for i in range(len(result_mor_lst)):
+                        splited = result_mor_lst[i].split(",")
+                        if splited[4] == 'Inflect': # If an eojeol is Inflect (= a concatenation of morphemes is not equal to its original eojeol. (e.g. 뭔지 != 뭐 + 이 + ㄴ지)
+                            mors = [x.split('/')[0] for x in splited[7].split('+')]                        
+                            for_replace = []
+                            for j in range(len(mors)):
+                                for_replace += [ mors[j] + '\t' + result_mor_lst[i].split('\t')[-1]]
+                            result_mor_lst[i] = for_replace
+                                        
+                    result_mor_lst_1 = []   # 형태소 단위로 쪼개 놓은 것 저장할 list
+                    for i in range(len(result_mor_lst)):
+                        if not type(result_mor_lst[i]) == list:
+                            result_mor_lst_1.append(result_mor_lst[i])
+                        else:
+                            for j in range(len(result_mor_lst[i])):
+                                result_mor_lst_1.append(result_mor_lst[i][j])
 
-                pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ"), mor_pos[1])   for mor_pos in word] for word in pos_result]   # converting final consonant characters to ordinary single characters
-                return pos_result
-                
-                """
-                an example of pos_result                    
+                    """
+                    e.g.
+                    ['이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',                    ['이것\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',
+                                                                                                '이\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*,0',
+                    '뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',            '뭐\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',
+                                                                                            >     '이\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',
+                                                                                                'ㄴ지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*,1',
+                    '알\tVV,*,T,알,*,*,*,*,2',                                                     '알\tVV,*,T,알,*,*,*,*,2',
+                    '아\tEF,*,F,아,*,*,*,*,2',                                                     '아\tEF,*,F,아,*,*,*,*,2',
+                    '.\tSF,*,*,*,*,*,*,*,2']                                                      '.\tSF,*,*,*,*,*,*,*,2']
+                    """
 
-                [[('이것', 'NP'), ('이', 'JKS')],
-                [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
-                [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
-                """
-        
-        else: # There is no code for Python 2. I strongly recommend you to use Python 3.
-            phrase = phrase.encode('utf-8')
-            if flatten:
-                result = self.tagger.parse(phrase).decode('utf-8')
-                return parse(result, join=join)
+                    ## 4) saving the 2-D (eojeol, morpheme/POS) result 
+                    parsed_mor = parse_fixed(self.tagger.parse(phrase), join=join)    # the 1-D (morpheme/POS) result
+
+                    pos_result = [] # a 2-D list for the final result
+                    cnt = 0 # index for a morpheme
+                    for i in range(len(phrase2ej)):
+                        ej_mor = [] # a 1-D (morpheme/POS) list of an eojeol
+                        while i == int( result_mor_lst_1[cnt].split(",")[-1]):  # While the index of a morpheme is equal to the index of an eojeol
+                            ej_mor.append(parsed_mor[cnt])  # adding a morpheme/POS to ej_mor
+                            cnt += 1
+                            if cnt == len(result_mor_lst_1): # If cnt is equal to the lengh of a phrase (or sentence)
+                                break
+                        pos_result.append(ej_mor)   # adding the 1-D (morpheme/POS) list to the final 2-D (eojeol, morpheme/POS) list
+
+                    pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ"), mor_pos[1])   for mor_pos in word] for word in pos_result]   # converting final consonant characters to ordinary single characters
+                    return pos_result
+                    
+                    """
+                    an example of pos_result                    
+
+                    [[('이것', 'NP'), ('이', 'JKS')],
+                    [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
+                    [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
+                    """
+            
+            else: # There is no code for Python 2. I strongly recommend you to use Python 3.
+                phrase = phrase.encode('utf-8')
+                if flatten:
+                    result = self.tagger.parse(phrase).decode('utf-8')
+                    return parse_fixed(result, join=join)
+                else:
+                    return [parse_fixed(self.tagger.parse(eojeol).decode('utf-8'), join=join)
+                            for eojeol in phrase.split()]
+
+
+        else:   # If we use the original version
+            """POS tagger.
+
+            :param flatten: If False, preserves eojeols.
+            :param join: If True, returns joined sets of morph and tag.
+            """
+
+            if sys.version_info[0] < 3:
+                phrase = phrase.encode('utf-8')
+                if flatten:
+                    result = self.tagger.parse(phrase).decode('utf-8')
+                    return parse(result, join=join)
+                else:
+                    return [parse(self.tagger.parse(eojeol).decode('utf-8'), join=join)
+                            for eojeol in phrase.split()]
             else:
-                return [parse(self.tagger.parse(eojeol).decode('utf-8'), join=join)
-                        for eojeol in phrase.split()]
+                if flatten:
+                    result = self.tagger.parse(phrase)
+                    return parse(result, join=join)
+                else:
+                    return [parse(self.tagger.parse(eojeol), join=join)
+                            for eojeol in phrase.split()]        
 
 
     def morphs(self, phrase):
@@ -343,7 +369,10 @@ class Mecab():
         tagged = self.pos(phrase)
         return [s for s, t in tagged if t.startswith('N')]
 
-    def __init__(self, dicpath='/usr/local/lib/mecab/dic/mecab-ko-dic'):
+    def __init__(self, dicpath='/usr/local/lib/mecab/dic/mecab-ko-dic', use_original=False):
+        self.use_original = use_original    # wheter to use the original version
+
+        self.dicpath = dicpath
         try:
             self.tagger = Tagger('-d %s' % dicpath)
             self.tagset = utils.read_json('%s/data/tagset/mecab.json' % utils.installpath)
@@ -351,3 +380,13 @@ class Mecab():
             raise Exception('The MeCab dictionary does not exist at "%s". Is the dictionary correctly installed?\nYou can also try entering the dictionary path when initializing the Mecab class: "Mecab(\'/some/dic/path\')"' % dicpath)
         except NameError:
             raise Exception('Install MeCab in order to use it: http://konlpy.org/en/latest/install/')
+
+    def __setstate__(self, state):
+        """just reinitialize."""
+
+        self.__init__(dicpath=state['dicpath'])
+
+    def __getstate__(self):
+        """store arguments."""
+
+        return {'dicpath': self.dicpath}
