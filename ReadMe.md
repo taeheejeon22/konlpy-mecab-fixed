@@ -19,7 +19,7 @@
 1) The original version
 ```python
 from konlpy.tag import Mecab
-mc = Mecab()
+mc = Mecab(use_original=True)
 print(mc.pos("들어간다"))
 ```
 ```python
@@ -29,7 +29,7 @@ print(mc.pos("들어간다"))
 2) The fixed version
 ```python
 from konlpy.tag import Mecab
-mc = Mecab()
+mc = Mecab(use_original=False)
 print(mc.pos("들어간다"))
 ```
 ```python
@@ -149,3 +149,9 @@ print(mc.pos("들어간다"))
 
 ## KoNLPy GitHub
 https://github.com/konlpy/konlpy
+
+
+## update log
+- 2021-09-10
+    - We added an instance variable 'use_original' so that you don't have to replace the "_mecab.py" file itself to use the original or the fixed version.
+    - The default value is False, which means we use the fixed version. If you want to use the original version, set the variable as True.
