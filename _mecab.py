@@ -243,9 +243,8 @@ class Mecab():
 
                     ## 1) an analysed result of Mecab-ko
                     result_mor_lst = result.splitlines()[:-1]
-                    result_mor_lst = [x.replace('영치기 영차', '영치기영차') for x in result_mor_lst]   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
+                    result_mor_lst = [token.replace('영치기 영차', '영치기영차') for token in result_mor_lst]   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
                     # an example of 'result_mor_lst'
-
                     # ['이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*',
                     # '뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*',
                     # '알\tVV,*,T,알,*,*,*,*',
