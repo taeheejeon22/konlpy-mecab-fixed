@@ -75,7 +75,7 @@ class Mecab():
         :param join: If True, returns joined sets of morph and tag.
         """
 
-        phrase = phrase.replace('영치기 영차', '영치기영차')   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeol. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
+        phrase = phrase.replace('영치기 영차', '영치기영차')   # a temporary solution for '영치기 영차'. '영치기 영차' consists of 2 eojeols. However, MeCab-ko analyses it as 1 eojeol. I haven't figured out the reason yet.
 
         if sys.version_info[0] < 3:
             phrase = phrase.encode('utf-8')
