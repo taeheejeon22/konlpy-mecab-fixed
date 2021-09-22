@@ -232,7 +232,7 @@ class Mecab():
                                 # ('아', 'EF'),
                                 # ('.', 'SF')])
 
-                    result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ") # converting final consonant characters to ordinary single characters
+                    result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ").replace("ᆼ", "ㅇ") # converting final consonant characters to ordinary single characters
                     return parse_fixed(result, join=join)
 
                 else:   # flatten = False. If you want to get a 3-D [(eojeol, (morpheme, POS)), ...] result
@@ -320,7 +320,7 @@ class Mecab():
                                 break
                         pos_result.append(ej_mor)   # adding the 2-D [(morpheme, POS), ...] list to the final 3-D [(eojeol, (morpheme, POS)), ...] list
 
-                    pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ"), mor_pos[1])   for mor_pos in word] for word in pos_result]   # converting final consonant characters to ordinary single characters
+                    pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ").replace("ᆼ", "ㅇ", mor_pos[1])   for mor_pos in word] for word in pos_result]   # converting final consonant characters to ordinary single characters
                     return pos_result
                     
                     # an example of pos_result                    
