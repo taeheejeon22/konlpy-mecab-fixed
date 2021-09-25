@@ -2,7 +2,7 @@
 
 ## Requirements
 - Python 3.x
-- [KoNLPy with Mecab](https://konlpy.org/en/latest/install/ "KoNLPy: Installation")
+- [KoNLPy (ver. 0.5.2) with Mecab](https://konlpy.org/en/latest/install/ "KoNLPy: Installation")
 
 ## Installation
 1. Download the fixed version (_mecab.py)
