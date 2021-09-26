@@ -91,10 +91,10 @@ class Mecab():
                 result = self.tagger.parse(phrase)
                 return parse(result, join=join)
             else:
-                ## 1) an analysed result of Mecab-ko
+                ## 1) analysed result of Mecab-ko
                 result = self.tagger.parse(phrase)
                 result_mor_lst = result.splitlines()[:-1]
-                # an example of result_mor_lst'
+                # example of result_mor_lst'
                 # ['너\tNP,*,F,너,*,*,*,*',
                 #  '를\tJKO,*,T,를,*,*,*,*',
                 #  '좋아해\tVV+EF,*,F,좋아해,Inflect,VV,EF,좋아하/VV/*+아/EF/*',
@@ -102,51 +102,52 @@ class Mecab():
 
 
                 ## 2) adding indices of eojeols to result_mor_lst
-                phrase2ej = phrase.split()  # 어절 리스트 # ['너를', '좋아해.']
+                phrase2ej = phrase.split()  # eojeol list # ['너를', '좋아해.']
                 cnt = 0  # index of an eojeol
-                concat_mor = ''
+                concat_mor = ""
 
                 for i in range(len(result_mor_lst)):
-                    info_str = result_mor_lst[i].split("\t")[0]
-                    info_str = info_str.strip()
+                    info_str = result_mor_lst[i].split("\t")[0].strip() # '너\tNP,*,F,너,*,*,*,*'   >   '너'
+                    
+                    concat_mor += info_str  # concatenating morphemes until the string is equal to their original eojeol (e.g. 알 > 알+았 > 알+았+어요)
 
-                    concat_mor += info_str  # concatenating morphemes until the string is equal to their original eojeol (e.g. 알 > 알았 > 알았어요)
-
-                    if concat_mor == phrase2ej[cnt]:  # If the string of concatenated morphemes is equal to their original eojeol
+                    if concat_mor == phrase2ej[cnt]:  # If the string of concatenated morphemes is equal to its original eojeol
                         result_mor_lst[i] += "," + str(cnt)  # adding the index (cnt) of the eojeol
                         cnt += 1
-                        concat_mor = ''
+                        concat_mor = ""
                     else:
                         result_mor_lst[i] += "," + str(cnt)  # adding the index (cnt) of the eojeol
-                # an example of 'result_mor_lst'
+                # example of 'result_mor_lst'
                 # ['너\tNP,*,F,너,*,*,*,*,0',   # add an eojeol index (',0') to each morpheme analysis
                 # '를\tJKO,*,T,를,*,*,*,*,0',
                 # '좋아해\tVV+EF,*,F,좋아해,Inflect,VV,EF,좋아하/VV/*+아/EF/*,1',
                 # '.\tSF,*,*,*,*,*,*,*,1']
 
 
-                ## 3) saving the 3-D [(eojeol, (morpheme, POS)), ...] result
-                parsed_mor = parse(self.tagger.parse(phrase), join=join)  # a 2-D [(morpheme, POS), ...] result
+                ## 3) saving the 3-D (unflattened) result:    [ [ (morpheme, POS), (morpheme, POS), ... ], ... ] 
+                parsed_mor = parse(self.tagger.parse(phrase), join=join)  # 2-D (flattened) result: [ (morpheme, POS), ...]
 
-                pos_result = []  # a 3-D list for the final result
+                pos_result = list() # list for the final result: 3-D (unflattened) list
                 cnt = 0  # index for a morpheme
 
                 for i in range(len(phrase2ej)):
-                    ej_mor = []  # a 2-D [(morpheme, POS), ...] list of an eojeol
+                    ej_mor = list() # list for an 2-D (flattened) eojeol list: [(morpheme, POS), ...]
+
                     while i == int(result_mor_lst[cnt].split(",")[-1]):  # While the index of a morpheme is equal to the index of an eojeol
                         if cnt > len(parsed_mor)-1:
                             break
 
                         ej_mor.append(parsed_mor[cnt])  # adding a (morpheme, POS) to ej_mor
                         cnt += 1
+
                         if cnt == len(result_mor_lst):  # If cnt is equal to the length of a phrase (or sentence)
                             break
-                    pos_result.append(ej_mor)  # adding the 2-D [(morpheme, POS), ...] list to the final 3-D [(eojeol, (morpheme, POS)), ...] list
+
+                    pos_result.append(ej_mor) # adding the 2-D (flattened) list of an eojeol to the final 3-D (unflattened) list
 
                 return pos_result
-                # an example of pos_result
+                # example of pos_result
                 # [[('너', 'NP'), ('를', 'JKO')], [('좋아해', 'VV+EF'), ('.', 'SF')]]
-
 
 
     def morphs(self, phrase):
