@@ -67,23 +67,28 @@ def parse_fixed(result, allattrs=False, join=False):
             # elem: an analysed result of an eojeol (e.g. 뭔지 > 뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*)
 
         if not elem: return ('', 'SY')
+
         s, t = elem.split('\t') # s: an eojeol (e.g. 위한)   # t: analysed resulf of an eojeol (e.g. VV+ETM,*,T,위한,Inflect,VV,ETM,위하/VV/*+ᆫ/ETM/*)
         lst_morpos = t.split(',')[-1].split("+")  # splitting the last attr (인덱스 표현) of 't' by morpheme (e.g. 위하/VV/*+ᆫ/ETM/* > ["위하/VV/*", "ᆫ/ETM/*"])
+        
         if join:
             if not t.split(',')[4].startswith("Inflect"): # If an eojeol is not Inflect (= a concatenation of morphemes is equal to its original eojeol. e.g. 해수욕장 == 해수 + 욕 + 장)
                 return s + '/' + t.split(',')[0]  # eojeol + / + POS (e.g. 위한/VV+ETM)
+                
             else:   # If an eojeol is Inflect (= a concatenation of morphemes is not equal to its original eojeol) (e.g. 불태워졌다 != 불태우 + 어 + 지 + 었 + 다)
                 return [regexp.search(x).group() for x in lst_morpos]   # make a list of morphemes with their POSs (e.g. ['줍/VV', '어서/EC'])
 
         else:
             if not t.split(',')[4].startswith("Inflect"):
                 return (s, t.split(',')[0])
+                
             else:
                 return [tuple(regexp.search(x).group().split("/")) for x in lst_morpos]
 
-    return list ( itertools.chain.from_iterable( [[x] if type(x) != list else x  for x in [split(elem, join=join) for elem in result.splitlines()[:-1]] ] ) )
-                                                # making a 3-D [(eojeol, (morpheme, POS)), ...] list
-                # flattening the list to a 2-D [(morphme, POS), ...] list
+    
+    return list ( itertools.chain.from_iterable( [ [x] if type(x) != list else x  for x in [split(elem, join=join) for elem in result.splitlines()[:-1]] ] ) )
+    #                                             # making a 3-D list: [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
+    #             # itertools: flattening the list to a 2-D list: [ (morpheme, POS), (morpheme, POS), ... ]
 
 
 # function for multiple replacing   # https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
@@ -248,12 +253,12 @@ class Mecab():
                     result = replace_multiple(string=result, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")])
                     return parse_fixed(result, join=join)
 
-                else:   # flatten = False. If you want to get a 3-D [(eojeol, (morpheme, POS)), ...] result
-                            # e.g.
-                            # [[('이것', 'NP'), ('이', 'JKS')],
-                            # [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
-                            # [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
-
+                else:   # flatten = False. If you want to get a 3-D result: [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
+        #                     # e.g.
+        #                     # [[('이것', 'NP'), ('이', 'JKS')],
+        #                     # [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
+        #                     # [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
+        #
                     ## 1) analysed result of Mecab-ko
                     result_mor_lst = result.splitlines()[:-1]
                     # example of 'result_mor_lst'
@@ -353,14 +358,14 @@ class Mecab():
                     # [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
                     
             
-            else: # There is no code for Python 2. I strongly recommend you to use Python 3.
-                phrase = phrase.encode('utf-8')
-                if flatten:
-                    result = self.tagger.parse(phrase).decode('utf-8')
-                    return parse_fixed(result, join=join)
-                else:
-                    return [parse_fixed(self.tagger.parse(eojeol).decode('utf-8'), join=join)
-                            for eojeol in phrase.split()]
+        #     else: # There is no code for Python 2. I strongly recommend you to use Python 3.
+        #         phrase = phrase.encode('utf-8')
+        #         if flatten:
+        #             result = self.tagger.parse(phrase).decode('utf-8')
+        #             return parse_fixed(result, join=join)
+        #         else:
+        #             return [parse_fixed(self.tagger.parse(eojeol).decode('utf-8'), join=join)
+        #                     for eojeol in phrase.split()]
 
 
         else:   # If we use the original version
