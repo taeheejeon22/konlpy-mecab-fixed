@@ -62,30 +62,46 @@ def parse(result, allattrs=False, join=False):
 # output of parse_fixed() (fixed)   : [('너', 'NP'), ('를', 'JKO'), ('좋아하', 'VV'), ('아', 'EF'), ('.', 'SF')]
 def parse_fixed(result, allattrs=False, join=False):
         # result: an analysed result of a sentence (e.g. 이게 뭔지 알아. > 이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*\n뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*\n알\tVV,*,T,알,*,*,*,*\n아\tEF,*,F,아,*,*,*,*\n.\tSF,*,*,*,*,*,*,*\nEOS\n)
-             
+
     def split(elem, join=False):
             # elem: an analysed result of an eojeol (e.g. 뭔지 > 뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*)
 
         if not elem: return ('', 'SY')
 
         s, t = elem.split('\t') # s: an eojeol (e.g. 위한)   # t: analysed resulf of an eojeol (e.g. VV+ETM,*,T,위한,Inflect,VV,ETM,위하/VV/*+ᆫ/ETM/*)
+        token_pos = t.split(',')[0] # original token POS of mecab-ko (e.g. 위한: VV+ETM)
         lst_morpos = t.split(',')[-1].split("+")  # splitting the last attr (인덱스 표현) of 't' by morpheme (e.g. 위하/VV/*+ᆫ/ETM/* > ["위하/VV/*", "ᆫ/ETM/*"])
-        
+
         if join:
             if not t.split(',')[4].startswith("Inflect"): # If an eojeol is not Inflect (= a concatenation of morphemes is equal to its original eojeol. e.g. 해수욕장 == 해수 + 욕 + 장)
-                return s + '/' + t.split(',')[0]  # eojeol + / + POS (e.g. 위한/VV+ETM)
-                
+                return s + '/' + token_pos  # eojeol + / + POS (e.g. 위한/VV+ETM)
+
             else:   # If an eojeol is Inflect (= a concatenation of morphemes is not equal to its original eojeol) (e.g. 불태워졌다 != 불태우 + 어 + 지 + 었 + 다)
-                return [regexp.search(x).group() for x in lst_morpos]   # make a list of morphemes with their POSs (e.g. ['줍/VV', '어서/EC'])
+                mor_info = [regexp.search(x).group() for x in lst_morpos] # make a list of morphemes with their POSs (e.g. ['줍/VV', '어서/EC'])
+
+                # There is a bug that outputs of mecab-ko-dic are different according to OS, and OS versions. This is a make-shift.
+                if len(mor_info) > 1:
+                    return mor_info
+                elif len(mor_info) == 1:
+                    return [s + "/" + token_pos]
+                # return [regexp.search(x).group() for x in lst_morpos]   # make a list of morphemes with their POSs (e.g. ['줍/VV', '어서/EC'] )
 
         else:
             if not t.split(',')[4].startswith("Inflect"):
-                return (s, t.split(',')[0])
-                
-            else:
-                return [tuple(regexp.search(x).group().split("/")) for x in lst_morpos]
+                return (s, token_pos)
 
-    
+            else:
+                mor_info = [tuple(regexp.search(x).group().split("/")) for x in lst_morpos] # make a list of morphemes with their POSs (e.g. [('줍', 'VV'), ('어서', 'EC')] )
+
+                # There is a bug that outputs of mecab-ko-dic are different according to OS, and OS versions. This is a make-shift.
+                if len(mor_info) > 1:
+                    return mor_info
+                elif len(mor_info) == 1:
+                    return (s, token_pos)
+
+                # return [tuple(regexp.search(x).group().split("/")) for x in lst_morpos]
+
+
     return list ( itertools.chain.from_iterable( [ [x] if type(x) != list else x  for x in [split(elem, join=join) for elem in result.splitlines()[:-1]] ] ) )
     #                                             # making a 3-D list: [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
     #             # itertools: flattening the list to a 2-D list: [ (morpheme, POS), (morpheme, POS), ... ]
@@ -95,8 +111,8 @@ def parse_fixed(result, allattrs=False, join=False):
 def replace_multiple(string, replace_list):
     # replace_tuples: [("brown", "red"), ("lazy", "quick")]
     for r in (replace_list):
-        string = string.replace(*r)                                      
-    return string    
+        string = string.replace(*r)
+    return string
 
 ######################## the original code ##############################
 # class Mecab():
@@ -267,16 +283,16 @@ class Mecab():
                     # '알\tVV,*,T,알,*,*,*,*',
                     # '아\tEF,*,F,아,*,*,*,*',
                     # '.\tSF,*,*,*,*,*,*,*']
-                
-                    
+
+
                     ## 2) adding indices of eojeols to result_mor_lst
-                    phrase2ej = phrase.split()  # eojeol list # ['먹을', '수', '있다']        
+                    phrase2ej = phrase.split()  # eojeol list # ['먹을', '수', '있다']
                     cnt = 0 # index of an eojeol
                     concat_mor = ""
-                    
+
                     for i in range(len(result_mor_lst)):
                         info_str = result_mor_lst[i].split("\t")[0].strip() # '너\tNP,*,F,너,*,*,*,*'   >   '너'
-                                                
+
                         concat_mor += info_str  # concatenating morphemes until the string is equal to their original eojeol (e.g. 알 > 알+았 > 알+았+어요)
 
                         if concat_mor == phrase2ej[cnt]:    # If the string of concatenated morphemes is equal to its original eojeol
@@ -291,27 +307,27 @@ class Mecab():
                     # '알\tVV,*,T,알,*,*,*,*,2',
                     # '아\tEF,*,F,아,*,*,*,*,2',
                     # '.\tSF,*,*,*,*,*,*,*,2']
-                    
+
 
                     ## 3) splitting the result_mor_lst by morpheme for the case when the string of concatenated morphmese is not equal to their original eojeol (e.g. 뭔지 != 뭐 + 이 + ㄴ지)
                     for i in range(len(result_mor_lst)):
                         splited = result_mor_lst[i].split(",")
-                        
+
                         if splited[4] == 'Inflect': # If an eojeol is Inflect (= a concatenation of morphemes is not equal to its original eojeol. (e.g. 뭔지 != 뭐 + 이 + ㄴ지)
-                            mors = [x.split('/')[0] for x in splited[7].split('+')]                        
-                            for_replace = list()             
+                            mors = [x.split('/')[0] for x in splited[7].split('+')]
+                            for_replace = list()
 
                             for j in range(len(mors)):
                                 for_replace += [ mors[j] + '\t' + result_mor_lst[i].split('\t')[-1]]
-                            
+
                             result_mor_lst[i] = for_replace
-        # split a token anlaysis string by morpheme                      
+        # split a token anlaysis string by morpheme
         # '좋아해\tVV+EF,*,F,좋아해,Inflect,VV,EF,좋아하/VV/*+아/EF/*,1'   >    # ['좋아하\tVV+EF,*,F,좋아해,Inflect,VV,EF,좋아하/VV/*+아/EF/*,1',
         #                                                                 # '아\tVV+EF,*,F,좋아해,Inflect,VV,EF,좋아하/VV/*+아/EF/*,1']
 
                         else:   # If an eojeol consists of 1 morpheme
-                            result_mor_lst[i] = [result_mor_lst[i]] # convert to a list (e.g. '너\tNP,*,F,너,*,*,*,*,0'  >  ['너\tNP,*,F,너,*,*,*,*,0'])    
-                            
+                            result_mor_lst[i] = [result_mor_lst[i]] # convert to a list (e.g. '너\tNP,*,F,너,*,*,*,*,0'  >  ['너\tNP,*,F,너,*,*,*,*,0'])
+
                     # flatten the list of lists to a 1-D list
                     result_mor_lst = list(itertools.chain.from_iterable(result_mor_lst))
 
@@ -324,9 +340,9 @@ class Mecab():
                     # '알\tVV,*,T,알,*,*,*,*,2',                                                     '알\tVV,*,T,알,*,*,*,*,2',
                     # '아\tEF,*,F,아,*,*,*,*,2',                                                     '아\tEF,*,F,아,*,*,*,*,2',
                     # '.\tSF,*,*,*,*,*,*,*,2']                                                      '.\tSF,*,*,*,*,*,*,*,2']
-                    
 
-                    ## 4) saving the 3-D (unflattened) result:    [ [ (morpheme, POS), (morpheme, POS), ... ], ... ] 
+
+                    ## 4) saving the 3-D (unflattened) result:    [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
                     parsed_mor = parse_fixed(self.tagger.parse(phrase), join=join)  # 2-D (flattened) result: [ (morpheme, POS), ...]
 
                     pos_result = list() # list for the final result: 3-D (unflattened) list
@@ -338,7 +354,7 @@ class Mecab():
                         while i == int( result_mor_lst[cnt].split(",")[-1]):  # While the index of a morpheme is equal to the index of an eojeol
                             if cnt > len(parsed_mor)-1:
                                 break
-                            
+
                             ej_mor.append(parsed_mor[cnt])  # adding a (morpheme, POS) to ej_mor
                             cnt += 1
 
@@ -349,15 +365,21 @@ class Mecab():
 
                     # converting final consonant characters to ordinary single characters
                     # pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ").replace("ᆼ", "ㅇ"), mor_pos[1]) for mor_pos in word] for word in pos_result]
-                    pos_result = [ [( replace_multiple(string=mor_pos[0], replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]), mor_pos[1]) for mor_pos in word] for word in pos_result]
-                    
+
+                    if join == False:
+                        pos_result = [ [( replace_multiple(string=mor_pos[0], replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]), mor_pos[1]) for mor_pos in word] for word in pos_result]
+
+                    elif join == True:
+                        pos_result = [ [ replace_multiple(string=mor_pos, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]) for mor_pos in word] for word in pos_result]
+
                     return pos_result
-                    # example of pos_result                    
+
+                    # example of pos_result
                     # [[('이것', 'NP'), ('이', 'JKS')],
                     # [('뭐', 'NP'), ('이', 'VCP'), ('ᆫ지', 'EC')],
                     # [('알', 'VV'), ('아', 'EF'), ('.', 'SF')]]
-                    
-            
+
+
         #     else: # There is no code for Python 2. I strongly recommend you to use Python 3.
         #         phrase = phrase.encode('utf-8')
         #         if flatten:
@@ -391,7 +413,7 @@ class Mecab():
                     return parse(result, join=join)
                 else:
                     # return [parse(self.tagger.parse(eojeol), join=join)
-                    #         for eojeol in phrase.split()]        
+                    #         for eojeol in phrase.split()]
 
                     # flatten fixed 2021-09-26
 
@@ -412,7 +434,7 @@ class Mecab():
 
                     for i in range(len(result_mor_lst)):
                         info_str = result_mor_lst[i].split("\t")[0].strip() # '너\tNP,*,F,너,*,*,*,*'   >   '너'
-                        
+
                         concat_mor += info_str  # concatenating morphemes until the string is equal to their original eojeol (e.g. 알 > 알+았 > 알+았+어요)
 
                         if concat_mor == phrase2ej[cnt]:  # If the string of concatenated morphemes is equal to its original eojeol
@@ -428,7 +450,7 @@ class Mecab():
                     # '.\tSF,*,*,*,*,*,*,*,1']
 
 
-                    ## 3) saving the 3-D (unflattened) result:    [ [ (morpheme, POS), (morpheme, POS), ... ], ... ] 
+                    ## 3) saving the 3-D (unflattened) result:    [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
                     parsed_mor = parse(self.tagger.parse(phrase), join=join)  # 2-D (flattened) result: [ (morpheme, POS), ...]
 
                     pos_result = list() # list for the final result: 3-D (unflattened) list
