@@ -1,3 +1,16 @@
+# based on KoNLPy _mecab.py
+# requirements
+    # KoNLPy 0.5.2
+    # mecab-0.996-ko-0.9.2  /   mecab-ko-dic: 2.1.1
+# how to use
+''' python
+from _mecab import Mecab
+
+mc = Mecab(use_original=True)   # use_original: True(use KoNLPy version), False(use our version)
+
+'''
+#
+
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
@@ -10,6 +23,8 @@ try:
     from MeCab import Tagger
 except ImportError:
     pass
+
+
 
 from konlpy import utils
 
@@ -113,6 +128,8 @@ def replace_multiple(string, replace_list):
     for r in (replace_list):
         string = string.replace(*r)
     return string
+
+
 
 ######################## the original code ##############################
 # class Mecab():
@@ -235,7 +252,7 @@ class Mecab():
 
 
     # TODO: check whether flattened results equal non-flattened
-    def pos(self, phrase, flatten=True, join=False):
+    def pos(self, phrase, flatten=True, join=False, coda_normalization=False):
         if self.use_original == False:  # If we use the fixed version
             """POS tagger.
 
@@ -266,7 +283,13 @@ class Mecab():
 
                     # converting final consonant characters to ordinary single characters
                     # result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ").replace("ᆼ", "ㅇ")
-                    result = replace_multiple(string=result, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")])
+
+
+                    if coda_normalization == False:
+                        pass
+                    elif coda_normalization == True:
+                        result = replace_multiple(string=result, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")])
+
                     return parse_fixed(result, join=join)
 
                 else:   # flatten = False. If you want to get a 3-D result: [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
@@ -363,14 +386,18 @@ class Mecab():
 
                         pos_result.append(ej_mor) # adding the 2-D (flattened) list of an eojeol to the final 3-D (unflattened) list
 
-                    # converting final consonant characters to ordinary single characters
-                    # pos_result = [ [(mor_pos[0].replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ").replace("ᆼ", "ㅇ"), mor_pos[1]) for mor_pos in word] for word in pos_result]
 
                     if join == False:
-                        pos_result = [ [( replace_multiple(string=mor_pos[0], replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]), mor_pos[1]) for mor_pos in word] for word in pos_result]
+                        if coda_normalization == False:
+                            pos_result = [[(mor_pos[0], mor_pos[1]) for mor_pos in word] for word in pos_result]
+                        elif coda_normalization == True:
+                            pos_result = [ [( replace_multiple(string=mor_pos[0], replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]), mor_pos[1]) for mor_pos in word] for word in pos_result]
 
                     elif join == True:
-                        pos_result = [ [ replace_multiple(string=mor_pos, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]) for mor_pos in word] for word in pos_result]
+                        if coda_normalization == False:
+                            pos_result = [[mor_pos for mor_pos in word] for word in pos_result]
+                        elif coda_normalization == True:
+                            pos_result = [ [ replace_multiple(string=mor_pos, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]) for mor_pos in word] for word in pos_result]
 
                     return pos_result
 
