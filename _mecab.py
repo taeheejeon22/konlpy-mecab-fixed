@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
+
 # based on _mecab.py of KoNLPy 
 
 # requirements
     # KoNLPy 0.5.2
     # mecab-0.996-ko-0.9.2  /   mecab-ko-dic: 2.1.1
 
-
-# -*- coding: utf-8 -*-
+    
 from __future__ import absolute_import
 
 import itertools     # for list flattening
