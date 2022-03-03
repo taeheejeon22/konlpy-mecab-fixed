@@ -1,17 +1,9 @@
-# based on KoNLPy _mecab.py
+# based on _mecab.py of KoNLPy 
 
 # requirements
     # KoNLPy 0.5.2
     # mecab-0.996-ko-0.9.2  /   mecab-ko-dic: 2.1.1
 
-# how to use
-''' python
-from _mecab import Mecab
-
-mc = Mecab(use_original=True)   # use_original: True(use KoNLPy version), False(use our version)
-
-'''
-#
 
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
