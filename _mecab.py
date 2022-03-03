@@ -1,7 +1,9 @@
 # based on KoNLPy _mecab.py
+
 # requirements
     # KoNLPy 0.5.2
     # mecab-0.996-ko-0.9.2  /   mecab-ko-dic: 2.1.1
+
 # how to use
 ''' python
 from _mecab import Mecab
@@ -81,7 +83,11 @@ def parse_fixed(result, allattrs=False, join=False):
     def split(elem, join=False):
             # elem: an analysed result of an eojeol (e.g. 뭔지 > 뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*)
 
-        if not elem: return ('', 'SY')
+        if not elem:
+            if join == False:
+                return ('', 'SY')
+            elif join == True:
+                return '/SY'
 
         s, t = elem.split('\t') # s: an eojeol (e.g. 위한)   # t: analysed resulf of an eojeol (e.g. VV+ETM,*,T,위한,Inflect,VV,ETM,위하/VV/*+ᆫ/ETM/*)
         token_pos = t.split(',')[0] # original token POS of mecab-ko (e.g. 위한: VV+ETM)
@@ -129,6 +135,18 @@ def replace_multiple(string, replace_list):
         string = string.replace(*r)
     return string
 
+
+# unicode error correction      # (타당하 + ㄴ지  vs. 뭐 + 이 +  ᆫ지) ->  ᆫ지    # "ᆼ" -> "ㅇ"
+def hangul_unicode_correction(parsed: str):
+    result_split_n = parsed.split("\n")[:-2]  # remove 'EOS', ''
+
+    result_corrected = [token_analysis.split(",")[0] + "," + ",".join(
+        [replace_multiple(string=info, replace_list=[("ㄴ", "ᆫ"), ("ㄹ", "ᆯ"), ("ㅁ", "ᄆ"), ("ㅂ", "ᄇ"), ("ᆼ", "ㅇ")]) for
+         info in token_analysis.split(",")[1:]]) for token_analysis in result_split_n]
+
+    result_corrected_final = "\n".join(result_corrected + parsed.split("\n")[-2:])
+
+    return result_corrected_final
 
 
 ######################## the original code ##############################
@@ -252,7 +270,7 @@ class Mecab():
 
 
     # TODO: check whether flattened results equal non-flattened
-    def pos(self, phrase, flatten=True, join=False, coda_normalization=False):
+    def pos(self, phrase, flatten=True, join=False, coda_normalization=True):
         if self.use_original == False:  # If we use the fixed version
             """POS tagger.
 
@@ -270,6 +288,7 @@ class Mecab():
             if sys.version_info[0] >= 3: # for Python 3
                 result = self.tagger.parse(phrase)  # an analysed result of a phrase (or a sentence) (e.g. 이게 뭔지 알아. > 이게\tNP+JKS,*,F,이게,Inflect,NP,JKS,이것/NP/*+이/JKS/*\n뭔지\tNP+VCP+EC,*,F,뭔지,Inflect,NP,EC,뭐/NP/*+이/VCP/*+ㄴ지/EC/*\n알\tVV,*,T,알,*,*,*,*\n아\tEF,*,F,아,*,*,*,*\n.\tSF,*,*,*,*,*,*,*\nEOS\n)
 
+
                 if flatten: # flatten = True. If you want to get a flattened (2-D) result: [(morpheme, POS), ...]
                                 # e.g.
                                 # [('이것', 'NP'),
@@ -285,10 +304,13 @@ class Mecab():
                     # result = result.replace("ᆯ", "ㄹ").replace("ᆫ", "ㄴ").replace("ᄇ", "ㅂ").replace("ᆼ", "ㅇ")
 
 
+                    result = hangul_unicode_correction(parsed=result)
+
+
                     if coda_normalization == False:
                         pass
                     elif coda_normalization == True:
-                        result = replace_multiple(string=result, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")])
+                        result = replace_multiple(string=result, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄆ", "ㅁ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")])
 
                     return parse_fixed(result, join=join)
 
@@ -306,6 +328,10 @@ class Mecab():
                     # '알\tVV,*,T,알,*,*,*,*',
                     # '아\tEF,*,F,아,*,*,*,*',
                     # '.\tSF,*,*,*,*,*,*,*']
+
+
+                    # troubleshooting an unanalyzable character: 
+                    result_mor_lst = [x if x != "" else '\tSY,*,*,*,*,*,*,*' for x in result_mor_lst ]
 
 
                     ## 2) adding indices of eojeols to result_mor_lst
@@ -366,7 +392,7 @@ class Mecab():
 
 
                     ## 4) saving the 3-D (unflattened) result:    [ [ (morpheme, POS), (morpheme, POS), ... ], ... ]
-                    parsed_mor = parse_fixed(self.tagger.parse(phrase), join=join)  # 2-D (flattened) result: [ (morpheme, POS), ...]
+                    parsed_mor = parse_fixed( hangul_unicode_correction( parsed=self.tagger.parse(phrase) ) , join=join)  # 2-D (flattened) result: [ (morpheme, POS), ...]
 
                     pos_result = list() # list for the final result: 3-D (unflattened) list
                     cnt = 0 # index for a morpheme
@@ -391,13 +417,14 @@ class Mecab():
                         if coda_normalization == False:
                             pos_result = [[(mor_pos[0], mor_pos[1]) for mor_pos in word] for word in pos_result]
                         elif coda_normalization == True:
-                            pos_result = [ [( replace_multiple(string=mor_pos[0], replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]), mor_pos[1]) for mor_pos in word] for word in pos_result]
+                            pos_result = [ [( replace_multiple(string=mor_pos[0], replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄆ", "ㅁ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]), mor_pos[1]) for mor_pos in word] for word in pos_result]
 
                     elif join == True:
                         if coda_normalization == False:
                             pos_result = [[mor_pos for mor_pos in word] for word in pos_result]
                         elif coda_normalization == True:
-                            pos_result = [ [ replace_multiple(string=mor_pos, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]) for mor_pos in word] for word in pos_result]
+                            pos_result = [ [ replace_multiple(string=mor_pos, replace_list=[("ᆫ", "ㄴ"), ("ᆯ", "ㄹ"), ("ᄆ", "ㅁ"), ("ᄇ", "ㅂ"), ("ᆼ", "ㅇ")]) for mor_pos in word] for word in pos_result]
+
 
                     return pos_result
 
@@ -515,7 +542,7 @@ class Mecab():
         return [s for s, t in tagged if t.startswith('N')]
 
     def __init__(self, dicpath='/usr/local/lib/mecab/dic/mecab-ko-dic', use_original=False):
-        self.use_original = use_original    # wheter to use the original version
+        self.use_original = use_original    # whether to use the original version
 
         self.dicpath = dicpath
         try:
